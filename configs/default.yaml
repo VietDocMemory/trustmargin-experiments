@@ -1,0 +1,18 @@
+base_model: google/gemma-2-2b-it
+generation:
+  max_new_tokens: 64
+  do_sample: false
+  temperature: 0.0
+rag:
+  top_k: 5
+trustmargin:
+  lambda_bind: 0.5
+  tau: -1.5
+runtime:
+  dtype: bfloat16
+  device: cuda
+  seed: 42
+logging:
+  save_candidates: true
+  save_scores: true
+  log_cuda_memory: true
