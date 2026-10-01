@@ -16,7 +16,7 @@ The RAG retriever runs in a separate Python environment because its `transformer
 
 ## Installation
 
-Use Linux or WSL with CUDA for the D2L environment. Install the two source repositories separately and acquire the D2L checkpoint as documented by the D2L repository. The checkpoint is not bundled here.
+Install the two source repositories in separate Python environments. The D2L repository's full `install.sh` targets Linux and includes training packages. For this experiment, a native Windows **inference-only** environment with CUDA has been smoke-tested; see [Windows setup](docs/WINDOWS_SETUP.md). The checkpoint is not bundled here.
 
 ```bash
 python -m venv .venv-rag
@@ -43,10 +43,11 @@ Input JSONL needs `question`, `ground_truth_answer` or `gold_answers`, and optio
 
 ## Smoke test
 
-The first run should use three samples and an already ingested collection. Replace `COLLECTION` with its real ID. The example dataset in the RAG repository can be used with its corresponding source document.
+The first run should use three samples and a short document. On Windows, [the setup guide](docs/WINDOWS_SETUP.md) prepares a legal-document passage, ingests it into Qdrant, and creates three smoke rows. This setup avoids feeding the entire 109-page PDF into the D2L context encoder.
 
 ```bash
-python scripts/smoke_test.py --input ../vietnamese-rag-system/data/rag_evaluation_dataset.jsonl --document ../vietnamese-rag-system/data/72_2020_QH14_431147.pdf --collection COLLECTION --limit 3
+../vietnamese-rag-system/.venv/bin/python scripts/prepare_smoke_data.py
+python scripts/smoke_test.py --input outputs/setup_smoke_input.jsonl --document outputs/setup_smoke_document.txt --collection setup_smoke_legal --limit 3
 ```
 
 The script checks retrieval, both nonempty candidates, six finite likelihoods, finite margins, selection, and JSONL output. It prints one readable sample and per-sample CUDA peak memory. Inspect memory across samples; allocator reservation alone can rise without a leak.
@@ -108,7 +109,7 @@ One line of `outputs/results.jsonl` includes sample metadata, retrieved passages
 
 ## Known limitations
 
-- The supplied workspace has no local D2L checkpoint or installed ML dependencies, so real GPU generation and scoring require setup. A 12 GiB RTX 3060 may lack VRAM for Gemma plus the D2L context encoder; use a larger GPU or a supported offload strategy if needed.
+- The Windows inference environment and a short three-sample GPU smoke test have passed. Full-document runs are unverified; a 12 GiB RTX 3060 may lack VRAM for long-context internalization, so use a bounded document or a supported offload strategy.
 - Full-document internalization is limited by the checkpoint context encoder. Prepare a bounded, document-consistent input before evaluation; this runner does not silently truncate.
 - PDF extraction order can be imperfect. Confirm the extracted document matches the Qdrant collection.
 - ROUGE-L tokenization is primarily whitespace-based and may not fully reflect Vietnamese word boundaries. EM/F1 are lexical metrics, not a semantic judge.

@@ -92,6 +92,9 @@ class GemmaBackend:
                         do_sample=False, pad_token_id=self.tokenizer.pad_token_id,
                     )
                 else:
+                    # D2L's generate() expects its LoRA forwards to have been
+                    # patched by internalize(); a cached adapter skips that call.
+                    self.model.patch_lora_forward()
                     self.model.generated_loras = adapter
                     output = self.model.generate(
                         input_ids=input_ids, max_new_tokens=self.config.max_new_tokens,
