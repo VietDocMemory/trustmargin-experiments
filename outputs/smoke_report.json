@@ -1,0 +1,39 @@
+{
+  "n": 3,
+  "metrics": {
+    "d2l": {
+      "exact_match": 0.0,
+      "token_f1": 0.2761967843935057,
+      "rouge_l_f1": 0.3565297772034067,
+      "abstention_accuracy": 0.0
+    },
+    "rag": {
+      "exact_match": 0.0,
+      "token_f1": 0.4128624748779788,
+      "rouge_l_f1": 0.4488888888888889,
+      "abstention_accuracy": 0.0
+    },
+    "oracle": {
+      "exact_match": 0.0,
+      "token_f1": 0.45631285166168895,
+      "rouge_l_f1": 0.5168230654154767,
+      "abstention_accuracy": 0.0
+    },
+    "tm": {
+      "exact_match": 0.0,
+      "token_f1": 0.4128624748779788,
+      "rouge_l_f1": 0.4488888888888889,
+      "abstention_accuracy": 0.0
+    }
+  },
+  "oracle_counts": {
+    "rag_better": 1,
+    "both_wrong": 3,
+    "unanswerable": 1,
+    "d2l_better": 2
+  },
+  "oracle_gain_over_best_single_source_f1": 0.043450376783710165,
+  "warning": null,
+  "lambda_bind": 0.5,
+  "tau": -1.5
+}
