@@ -14,6 +14,10 @@ def main():
     parser.add_argument("--collection", required=True)
     parser.add_argument("--limit", type=int, default=3, choices=(3, 4, 5))
     parser.add_argument("--config", type=Path)
+    parser.add_argument("--wandb", action="store_true", help="Log the smoke experiment to W&B")
+    parser.add_argument("--wandb-project", default="trustmargin-d2l-rag")
+    parser.add_argument("--wandb-entity")
+    parser.add_argument("--wandb-mode", choices=("online", "offline"), default="online")
     args = parser.parse_args()
     config = load_config(args.config)
     candidates = generate_candidates(args.input, ROOT / "outputs/smoke_candidates.jsonl", config, args.collection, args.document, args.limit, True)
@@ -41,6 +45,16 @@ def main():
             growth = max(allocated) - min(allocated)
             print(f"GPU {phase} allocated-after range: {growth:.1f} MB")
             assert growth < max(512, 0.1 * allocated[0]), f"Possible GPU memory growth during {phase}"
+    if args.wandb:
+        from trustmargin_exp.tracking import log_experiment
+
+        url = log_experiment(
+            ROOT / "outputs/smoke_results.jsonl", ROOT / "outputs/smoke_report.json",
+            config, project=args.wandb_project, entity=args.wandb_entity,
+            mode=args.wandb_mode, name="smoke-test",
+            extra_files=[ROOT / "outputs/smoke_candidates.jsonl", ROOT / "outputs/smoke_scored.jsonl"],
+        )
+        print(url or "W&B run saved locally in offline mode under outputs/wandb")
 
 
 if __name__ == "__main__":

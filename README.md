@@ -89,6 +89,32 @@ select RAG iff M > tau; otherwise select D2L
 
 Defaults are `lambda_bind=0.5` and `tau=-1.5`.
 
+## Weights & Biases logging
+
+Install the optional tracking dependency in the D2L Python environment. On Windows:
+
+```powershell
+py -m uv pip install --python ..\doc-to-lora\.venv\Scripts\python.exe -e '.[tracking]'
+```
+
+Authenticate interactively with `..\doc-to-lora\.venv\Scripts\wandb.exe login` after creating a new API key. Keep the key out of the repository, scripts, shell history, and experiment artifacts. The default project is `trustmargin-d2l-rag`; use `--wandb-project` and `--wandb-entity` to choose another destination.
+
+To log a new evaluation automatically:
+
+```powershell
+..\doc-to-lora\.venv\Scripts\python.exe scripts\run_full_eval.py --wandb --wandb-project trustmargin-d2l-rag
+```
+
+Use `--wandb-artifact-file outputs/candidates.jsonl` when you also want the candidate-stage file attached to that run.
+
+To upload the already generated smoke results without rerunning inference:
+
+```powershell
+..\doc-to-lora\.venv\Scripts\python.exe scripts\log_existing_run.py --results outputs\smoke_results.jsonl --report outputs\smoke_report.json --artifact-file outputs\smoke_candidates.jsonl --artifact-file outputs\smoke_scored.jsonl
+```
+
+Add `--mode offline` to `log_existing_run.py`, or `--wandb-mode offline` to `run_full_eval.py` or `smoke_test.py`, to store a run under ignored `outputs/wandb/` without authentication. After login, sync a saved run with `wandb sync` and its `offline-run-*` directory. Each run records the evaluation config, D2L/RAG/oracle/TrustMargin metrics, per-question decisions, and a versioned artifact with the selected JSONL and report files. Those artifacts include question and answer text; select a private W&B project if the documents are confidential. The full D2L checkpoint and generated adapter tensors are not uploaded.
+
 ## Validation threshold sweep
 
 Prepare a **validation-only** scored file with `split="validation"` on every row. Then run:
@@ -109,7 +135,7 @@ One line of `outputs/results.jsonl` includes sample metadata, retrieved passages
 
 ## Known limitations
 
-- The Windows inference environment and a short three-sample GPU smoke test have passed. Full-document runs are unverified; a 12 GiB RTX 3060 may lack VRAM for long-context internalization, so use a bounded document or a supported offload strategy.
+- The Windows inference environment and a short three-sample GPU smoke test have passed. All 109 pages of the legal PDF were independently internalized into 109 page adapters. The full document is about 90,000 tokens and cannot be supplied to D2L's single-context `internalize` API. The page adapters do not constitute one document adapter; the experiment's full-document candidate path remains unsupported without an explicit page-selection or aggregation method.
 - Full-document internalization is limited by the checkpoint context encoder. Prepare a bounded, document-consistent input before evaluation; this runner does not silently truncate.
 - PDF extraction order can be imperfect. Confirm the extracted document matches the Qdrant collection.
 - ROUGE-L tokenization is primarily whitespace-based and may not fully reflect Vietnamese word boundaries. EM/F1 are lexical metrics, not a semantic judge.
