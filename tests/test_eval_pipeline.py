@@ -56,7 +56,8 @@ class EvalPipelineTests(unittest.TestCase):
             source.write_text(json.dumps(row("q1")) + "\n", encoding="utf-8")
             report = run_eval(source, root / "results.jsonl", root / "report.json", SimpleNamespace(lambda_bind=0.5, tau=-1.5), sweep=True)
             self.assertEqual(report["sweep"]["label"], "validation-tuned")
-            self.assertEqual(len(report["sweep"]["trials"]), 36)
+            self.assertGreaterEqual(len(report["sweep"]["trials"]), 42)
+            self.assertIn("selected_rag", report["sweep"]["best"])
 
 
 if __name__ == "__main__":

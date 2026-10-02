@@ -39,12 +39,35 @@ def teacher_forced_log_likelihood(model, tokenizer, prompt_ids: list[int], answe
         raise ValueError("Answer has no tokens")
     ids = torch.tensor([prompt_ids + answer_ids], dtype=torch.long, device=device)
     with torch.inference_mode():
-        logits = model(input_ids=ids, attention_mask=torch.ones_like(ids)).logits
-        shifted = logits[0, :-1, :].float()
-        targets = ids[0, 1:]
-        token_log_probs = torch.log_softmax(shifted, dim=-1).gather(1, targets.unsqueeze(1)).squeeze(1)
-        mask = torch.tensor(answer_mask(len(prompt_ids), len(answer_ids)), dtype=torch.bool, device=device)
-        selected = token_log_probs[mask]
+        try:
+            # Gemma can project logits only for the answer boundary/span. This
+            # avoids allocating [prompt_length, vocabulary_size] on a 12 GB GPU.
+            logits = model(
+                input_ids=ids,
+                attention_mask=torch.ones_like(ids),
+                logits_to_keep=len(answer_ids) + 1,
+            ).logits
+            if logits.shape[1] != len(answer_ids) + 1:
+                raise RuntimeError("Unexpected logits_to_keep shape")
+            answer_logits = logits[0, :-1, :].float()
+            targets = ids[0, -len(answer_ids):]
+            selected = torch.log_softmax(answer_logits, dim=-1).gather(
+                1, targets.unsqueeze(1)
+            ).squeeze(1)
+        except (TypeError, RuntimeError):
+            # Compatibility path for test doubles and older model classes.
+            logits = model(input_ids=ids, attention_mask=torch.ones_like(ids)).logits
+            shifted = logits[0, :-1, :].float()
+            targets = ids[0, 1:]
+            token_log_probs = torch.log_softmax(shifted, dim=-1).gather(
+                1, targets.unsqueeze(1)
+            ).squeeze(1)
+            mask = torch.tensor(
+                answer_mask(len(prompt_ids), len(answer_ids)),
+                dtype=torch.bool,
+                device=device,
+            )
+            selected = token_log_probs[mask]
         result = selected.mean().item()
     if selected.numel() != len(answer_ids) or not math.isfinite(result):
         raise ValueError("Invalid answer-only likelihood")

@@ -1,8 +1,14 @@
 base_model: google/gemma-2-2b-it
 generation:
-  max_new_tokens: 64
+  max_new_tokens: 128
+  max_retry_new_tokens: 256
+  max_prompt_tokens: 4096
+  repetition_penalty: 1.1
+  no_repeat_ngram_size: 4
   do_sample: false
   temperature: 0.0
+scoring:
+  max_prompt_tokens: 1024
 rag:
   top_k: 5
 trustmargin:
@@ -16,3 +22,5 @@ logging:
   save_candidates: true
   save_scores: true
   log_cuda_memory: true
+evaluation:
+  both_wrong_f1_threshold: 0.2

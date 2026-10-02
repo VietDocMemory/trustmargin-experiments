@@ -18,6 +18,11 @@ def _path(name: str, fallback: Path) -> Path:
 class Config:
     base_model: str
     max_new_tokens: int
+    max_retry_new_tokens: int
+    max_generation_prompt_tokens: int
+    max_score_prompt_tokens: int
+    repetition_penalty: float
+    no_repeat_ngram_size: int
     top_k: int
     lambda_bind: float
     tau: float
@@ -25,6 +30,7 @@ class Config:
     device: str
     seed: int
     log_cuda_memory: bool
+    both_wrong_f1_threshold: float
     rag_repo: Path
     d2l_repo: Path
     d2l_checkpoint: Path
@@ -47,6 +53,11 @@ def load_config(path: str | Path | None = None) -> Config:
     return Config(
         base_model=cfg["base_model"],
         max_new_tokens=int(cfg["generation"]["max_new_tokens"]),
+        max_retry_new_tokens=int(cfg["generation"]["max_retry_new_tokens"]),
+        max_generation_prompt_tokens=int(cfg["generation"]["max_prompt_tokens"]),
+        max_score_prompt_tokens=int(cfg["scoring"]["max_prompt_tokens"]),
+        repetition_penalty=float(cfg["generation"]["repetition_penalty"]),
+        no_repeat_ngram_size=int(cfg["generation"]["no_repeat_ngram_size"]),
         top_k=int(cfg["rag"]["top_k"]),
         lambda_bind=float(cfg["trustmargin"]["lambda_bind"]),
         tau=float(cfg["trustmargin"]["tau"]),
@@ -54,6 +65,7 @@ def load_config(path: str | Path | None = None) -> Config:
         device=cfg["runtime"]["device"],
         seed=int(cfg["runtime"]["seed"]),
         log_cuda_memory=bool(cfg["logging"]["log_cuda_memory"]),
+        both_wrong_f1_threshold=float(cfg["evaluation"]["both_wrong_f1_threshold"]),
         rag_repo=rag_repo,
         d2l_repo=d2l_repo,
         d2l_checkpoint=_path("D2L_CHECKPOINT", d2l_repo / "trained_d2l/gemma_demo/checkpoint-80000/pytorch_model.bin"),

@@ -24,7 +24,11 @@ class AdapterLifecycleTests(unittest.TestCase):
         backend.model = Model()
         backend.torch = SimpleNamespace(tensor=lambda value, device: value, inference_mode=nullcontext)
         backend.device = "cpu"
-        backend.config = SimpleNamespace(max_new_tokens=1)
+        backend.config = SimpleNamespace(
+            max_new_tokens=1,
+            repetition_penalty=1.1,
+            no_repeat_ngram_size=4,
+        )
         backend.tokenizer = SimpleNamespace(pad_token_id=0)
 
         with self.assertRaisesRegex(RuntimeError, "generation stopped"):

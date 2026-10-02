@@ -1,0 +1,68 @@
+{
+  "n": 3,
+  "metrics": {
+    "d2l": {
+      "exact_match": 0.0,
+      "token_f1": 0.22426564495530013,
+      "rouge_l_f1": 0.3134521085772025,
+      "abstention_accuracy": 0.0
+    },
+    "rag": {
+      "exact_match": 0.3333333333333333,
+      "token_f1": 0.7966986942596699,
+      "rouge_l_f1": 0.7627746576017342,
+      "abstention_accuracy": 1.0
+    },
+    "oracle": {
+      "exact_match": 0.3333333333333333,
+      "token_f1": 0.7966986942596699,
+      "rouge_l_f1": 0.7627746576017342,
+      "abstention_accuracy": 1.0
+    },
+    "tm": {
+      "exact_match": 0.3333333333333333,
+      "token_f1": 0.7966986942596699,
+      "rouge_l_f1": 0.7627746576017342,
+      "abstention_accuracy": 1.0
+    }
+  },
+  "oracle_counts": {
+    "rag_better": 3,
+    "both_wrong": 0,
+    "both_exact_match_wrong": 2,
+    "unanswerable": 1,
+    "d2l_better": 0,
+    "tie": 0
+  },
+  "selection_counts": {
+    "d2l": 0,
+    "rag": 3
+  },
+  "mean_latency_seconds": {
+    "adapter_build": 0.03094266666691207,
+    "adapter_generation": 0.0,
+    "adapter_load": 0.03094266666691207,
+    "d2l_generation": 1.4161457333336027,
+    "likelihood_scoring": 0.9956751000002745,
+    "rag_generation": 2.9133986666665805,
+    "retrieval": 5.337561466666254,
+    "total": 10.694775566666673
+  },
+  "candidate_diagnostics": {
+    "d2l_initially_truncated": 0,
+    "d2l_retried": 0,
+    "d2l_final_truncated": 0,
+    "d2l_abstention_normalized": 0,
+    "d2l_looks_vietnamese": 3,
+    "rag_initially_truncated": 0,
+    "rag_retried": 0,
+    "rag_final_truncated": 0,
+    "rag_abstention_normalized": 1,
+    "rag_looks_vietnamese": 3
+  },
+  "both_wrong_f1_threshold": 0.2,
+  "oracle_gain_over_best_single_source_f1": 0.0,
+  "warning": "Low candidate complementarity; TrustMargin has little headroom",
+  "lambda_bind": 0.5,
+  "tau": -1.5
+}

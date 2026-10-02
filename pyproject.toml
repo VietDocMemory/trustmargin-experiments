@@ -7,7 +7,7 @@ name = "trustmargin-exp"
 version = "0.1.0"
 description = "Experimental Doc-to-LoRA versus RAG TrustMargin arbitration"
 requires-python = ">=3.12"
-dependencies = ["PyYAML>=6", "pypdf>=5", "rouge-score>=0.1.2"]
+dependencies = ["PyYAML>=6", "pypdf>=5", "rouge-score>=0.1.2", "matplotlib>=3.8"]
 
 [project.optional-dependencies]
 test = ["pytest>=8"]

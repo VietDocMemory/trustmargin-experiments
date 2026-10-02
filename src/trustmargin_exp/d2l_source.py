@@ -17,6 +17,7 @@ class D2LSource:
         self.adapter_load_latency = 0.0
         self.d2l_generation_latency = 0.0
         self.adapter_cache_hit = False
+        self.generation_diagnostics: dict = {}
 
     def build_adapter(self, document_or_context: str):
         if not document_or_context.strip():
@@ -62,5 +63,6 @@ class D2LSource:
     def generate_d2l(self, question: str, adapter) -> str:
         started = time.perf_counter()
         answer = self.backend.generate_with_adapter(question, adapter)
+        self.generation_diagnostics = dict(self.backend.last_generation)
         self.d2l_generation_latency = time.perf_counter() - started
         return answer

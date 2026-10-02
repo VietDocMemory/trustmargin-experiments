@@ -13,9 +13,18 @@ def main():
     parser.add_argument("--output", type=Path, default=ROOT / "outputs/candidates.jsonl")
     parser.add_argument("--config", type=Path)
     parser.add_argument("--limit", type=int)
+    parser.add_argument(
+        "--document-source",
+        choices=("provided", "retrieved"),
+        default="provided",
+        help="Use a supplied document or the label-free retrieved passages as bounded D2L input",
+    )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
-    rows = generate_candidates(args.input, args.output, load_config(args.config), args.collection, args.document, args.limit, args.overwrite)
+    rows = generate_candidates(
+        args.input, args.output, load_config(args.config), args.collection,
+        args.document, args.limit, args.overwrite, args.document_source,
+    )
     print(f"Wrote {len(rows)} candidates to {args.output}")
 
 
