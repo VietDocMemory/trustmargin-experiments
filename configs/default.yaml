@@ -12,8 +12,8 @@ scoring:
 rag:
   top_k: 5
 trustmargin:
-  lambda_bind: 0.5
-  tau: -1.5
+  lambda_bind: 0.0
+  tau: -1.27
 runtime:
   dtype: bfloat16
   device: cuda
