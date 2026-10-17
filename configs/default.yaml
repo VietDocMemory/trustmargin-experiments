@@ -10,7 +10,7 @@ generation:
 scoring:
   max_prompt_tokens: 1024
 rag:
-  top_k: 5
+  top_k: 8
 trustmargin:
   lambda_bind: 0.0
   tau: -1.38

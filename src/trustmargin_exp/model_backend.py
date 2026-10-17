@@ -82,12 +82,11 @@ class GemmaBackend:
                 parts.append("CÂU HỎI:\n" + question)
             parts.append("TRẢ LỜI:")
             system_content = (
-                "Bạn là một trợ lý trả lời bằng tiếng Việt. "
-                "Tuân thủ các quy tắc sau: chỉ sử dụng thông tin trong tài liệu hoặc "
-                "phần NGỮ CẢNH được cung cấp để trả lời câu hỏi; không suy đoán và "
-                "không bổ sung kiến thức bên ngoài. Nếu không đủ thông tin để trả lời, "
-                f"hãy trả lời đúng một câu: \"{ABSTENTION}\" "
-                "Trả lời ngắn gọn, trực tiếp và không thêm giải thích cho câu từ chối."
+                "Bạn là VietRAG Bot, một trợ lý trả lời bằng tiếng Việt.\n"
+                "Tuân thủ các quy tắc sau: chỉ sử dụng thông tin trong phần NGỮ CẢNH để trả lời\n"
+                "câu hỏi; không suy đoán và không bổ sung kiến thức bên ngoài. Nếu ngữ cảnh không\n"
+                f"đủ để trả lời, hãy trả lời đúng một câu: \"{ABSTENTION}\" Trả lời ngắn\n"
+                "gọn, trực tiếp."
             )
             messages = [
                 {
