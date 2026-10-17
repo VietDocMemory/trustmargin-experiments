@@ -77,19 +77,22 @@ class GemmaBackend:
         def render(text: str) -> list[int]:
             parts = []
             if contexts is not None:
-                parts.append("<context>\n" + text + "\n</context>")
+                parts.append("NGỮ CẢNH:\n" + text)
             if question:
-                parts.append("Câu hỏi:\n" + question)
-            parts.append("Câu trả lời:")
+                parts.append("CÂU HỎI:\n" + question)
+            parts.append("TRẢ LỜI:")
+            system_content = (
+                "Bạn là một trợ lý trả lời bằng tiếng Việt. "
+                "Tuân thủ các quy tắc sau: chỉ sử dụng thông tin trong tài liệu hoặc "
+                "phần NGỮ CẢNH được cung cấp để trả lời câu hỏi; không suy đoán và "
+                "không bổ sung kiến thức bên ngoài. Nếu không đủ thông tin để trả lời, "
+                f"hãy trả lời đúng một câu: \"{ABSTENTION}\" "
+                "Trả lời ngắn gọn, trực tiếp và không thêm giải thích cho câu từ chối."
+            )
             messages = [
                 {
                     "role": "system",
-                    "content": (
-                        "Trả lời hoàn toàn bằng tiếng Việt, ngắn gọn và trực tiếp. "
-                        "Chỉ dùng thông tin trong tài liệu hoặc ngữ cảnh được cung cấp. "
-                        f"Nếu không đủ thông tin, chỉ trả lời chính xác: \"{ABSTENTION}\" "
-                        "Không thêm giải thích cho câu từ chối."
-                    ),
+                    "content": system_content,
                 },
                 {"role": "user", "content": "\n\n".join(parts)},
             ]
