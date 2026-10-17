@@ -86,7 +86,7 @@ class GemmaBackend:
                 "Tuân thủ các quy tắc sau: chỉ sử dụng thông tin trong phần NGỮ CẢNH để trả lời\n"
                 "câu hỏi; không suy đoán và không bổ sung kiến thức bên ngoài. Nếu ngữ cảnh không\n"
                 f"đủ để trả lời, hãy trả lời đúng một câu: \"{ABSTENTION}\" Trả lời ngắn\n"
-                "gọn, trực tiếp."
+                "gọn, trực tiếp và câu trả lòi và được trích nguyên văn của nguồn không được tự ý thay đổi từ ngữ hay cách diễn đạt cũng như cắt câu giữa chừng."
             )
             messages = [
                 {
