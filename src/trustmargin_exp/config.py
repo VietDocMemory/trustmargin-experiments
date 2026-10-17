@@ -14,6 +14,17 @@ def _path(name: str, fallback: Path) -> Path:
     return (raw if raw.is_absolute() else ROOT / raw).resolve()
 
 
+def _executable_path(name: str, fallback: Path) -> Path:
+    """Resolve a configured executable without following a venv Python symlink.
+
+    On Linux, ``.venv/bin/python`` normally points to the base interpreter.
+    Calling ``Path.resolve()`` here would turn it into that base interpreter,
+    which bypasses the virtual environment and its installed dependencies.
+    """
+    raw = Path(os.environ.get(name, str(fallback))).expanduser()
+    return raw if raw.is_absolute() else ROOT / raw
+
+
 @dataclass(frozen=True)
 class Config:
     base_model: str
@@ -69,5 +80,5 @@ def load_config(path: str | Path | None = None) -> Config:
         rag_repo=rag_repo,
         d2l_repo=d2l_repo,
         d2l_checkpoint=_path("D2L_CHECKPOINT", d2l_repo / "trained_d2l/gemma_demo/checkpoint-80000/pytorch_model.bin"),
-        rag_python=_path("RAG_PYTHON", rag_repo / ".venv" / python_name),
+        rag_python=_executable_path("RAG_PYTHON", rag_repo / ".venv" / python_name),
     )
