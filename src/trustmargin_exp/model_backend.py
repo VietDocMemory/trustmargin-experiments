@@ -82,18 +82,28 @@ class GemmaBackend:
             if question:
                 parts.append("CÂU HỎI:\n" + question)
             parts.append("TRẢ LỜI:")
-            system_content = (
-                "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt.\n"
-                "Chỉ sử dụng thông tin trong NGỮ CẢNH; không suy đoán hoặc bổ sung "
-                "kiến thức bên ngoài.\n"
-                f"Nếu NGỮ CẢNH không đủ thông tin, chỉ trả lời: \"{ABSTENTION}\"\n"
-                "Trả lời trực tiếp những gì câu hỏi yêu cầu, với độ dài vừa đủ để "
-                "nêu đầy đủ các ý cần thiết. Lược bỏ chi tiết trong NGỮ CẢNH không "
-                "liên quan đến câu hỏi. Có thể diễn đạt lại cho gọn, nhưng phải giữ "
-                "chính xác ý nghĩa, đối tượng áp dụng, điều kiện, ngoại lệ, con số "
-                "và mốc thời gian; không rút gọn nếu việc đó làm thay đổi ý nghĩa.\n"
-                "Không thêm tiêu đề, giải thích ngoài câu hỏi hoặc nhãn nguồn."
-            )
+            if contexts is None:
+                system_content = (
+                    "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt dựa trên tài liệu đã "
+                    "được ghi vào bộ nhớ của mô hình. Chỉ dùng thông tin từ bộ nhớ đó; "
+                    "không suy đoán hoặc bổ sung kiến thức bên ngoài.\n"
+                    f"Nếu không đủ thông tin, chỉ trả lời: \"{ABSTENTION}\"\n"
+                    "Trả lời trực tiếp, nêu đủ ý cần thiết với độ dài vừa phải. "
+                    "Không lặp từ, lặp cụm từ, liệt kê lan man hoặc thêm nhãn nguồn."
+                )
+            else:
+                system_content = (
+                    "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt.\n"
+                    "Chỉ sử dụng thông tin trong NGỮ CẢNH; không suy đoán hoặc bổ sung "
+                    "kiến thức bên ngoài.\n"
+                    f"Nếu NGỮ CẢNH không đủ thông tin, chỉ trả lời: \"{ABSTENTION}\"\n"
+                    "Trả lời trực tiếp và chỉ nêu các thông tin cần để giải quyết đầy đủ "
+                    "đúng điều câu hỏi yêu cầu. Khi chỉ hỏi một thuộc tính hoặc điểm khác biệt, "
+                    "nêu thuộc tính đó cho từng đối tượng liên quan; không chép toàn bộ "
+                    "định nghĩa hay các thuộc tính khác. Có thể diễn đạt lại cho gọn, "
+                    "nhưng phải giữ đúng đối tượng, điều kiện, ngoại lệ, con số và mốc thời gian.\n"
+                    "Không thêm tiêu đề, giải thích ngoài câu hỏi hoặc nhãn nguồn."
+                )
             messages = [
                 {
                     "role": "system",
@@ -143,8 +153,8 @@ class GemmaBackend:
                     output = self.model.generate(
                         input_ids=input_ids, max_new_tokens=max_new_tokens,
                         do_sample=False, pad_token_id=self.tokenizer.pad_token_id,
-                        repetition_penalty=1.15 if anti_repeat else self.config.repetition_penalty,
-                        no_repeat_ngram_size=4 if anti_repeat else self.config.no_repeat_ngram_size,
+                        repetition_penalty=1.15 if anti_repeat else self.config.d2l_repetition_penalty,
+                        no_repeat_ngram_size=4 if anti_repeat else self.config.d2l_no_repeat_ngram_size,
                     )
             generated = output[0, len(prompt_ids):]
             eos_ids = self.tokenizer.eos_token_id

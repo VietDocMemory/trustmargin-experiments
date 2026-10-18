@@ -1,4 +1,5 @@
 import unittest
+from contextlib import nullcontext
 from types import SimpleNamespace
 
 from trustmargin_exp.model_backend import GemmaBackend
@@ -10,6 +11,38 @@ class CharacterTokenizer:
 
 
 class GenerationRetryTests(unittest.TestCase):
+    def test_generation_settings_are_separate_for_d2l_and_rag(self):
+        backend = object.__new__(GemmaBackend)
+        backend.config = SimpleNamespace(
+            repetition_penalty=1.0, no_repeat_ngram_size=0,
+            d2l_repetition_penalty=1.1, d2l_no_repeat_ngram_size=4,
+        )
+        backend.device = "cpu"
+        backend.tokenizer = SimpleNamespace(pad_token_id=0, eos_token_id=2)
+        backend.torch = SimpleNamespace(tensor=lambda value, device: value, inference_mode=nullcontext)
+        calls = []
+
+        class FakeOutput:
+            def __getitem__(self, key):
+                return [1, 65, 2][key[1]]
+
+        def record_generate(**kwargs):
+            calls.append(kwargs)
+            return FakeOutput()
+
+        backend.model = SimpleNamespace(
+            reset=lambda: None, patch_lora_forward=lambda: None,
+            base_model=SimpleNamespace(generate=record_generate),
+            generate=record_generate,
+        )
+        backend._generate_once([1], 64)
+        backend._generate_once([1], 64, adapter=object())
+        backend._generate_once([1], 64, adapter=object(), anti_repeat=True)
+        self.assertEqual(
+            [(call["repetition_penalty"], call["no_repeat_ngram_size"]) for call in calls],
+            [(1.0, 0), (1.1, 4), (1.15, 4)],
+        )
+
     def make_backend(self, first_answer, retry_answer):
         backend = object.__new__(GemmaBackend)
         backend.config = SimpleNamespace(max_new_tokens=256, max_retry_new_tokens=384)

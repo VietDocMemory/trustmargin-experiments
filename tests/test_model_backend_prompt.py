@@ -33,7 +33,8 @@ def test_rag_prompt_uses_new_grounding_instruction_without_citations():
     assert [message["role"] for message in messages] == ["system", "user"]
     assert "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt." in messages[0]["content"]
     assert "không suy đoán" in messages[0]["content"]
-    assert "Trả lời trực tiếp những gì câu hỏi yêu cầu" in messages[0]["content"]
+    assert "chỉ nêu các thông tin cần" in messages[0]["content"]
+    assert "không chép toàn bộ" in messages[0]["content"]
     assert "điều kiện, ngoại lệ, con số" in messages[0]["content"]
     assert "[Nguồn" not in messages[0]["content"]
     assert "NGỮ CẢNH:" in messages[1]["content"]
@@ -50,4 +51,6 @@ def test_d2l_prompt_remains_question_only():
     messages = backend.tokenizer.messages
     assert [message["role"] for message in messages] == ["system", "user"]
     assert "NGỮ CẢNH:" not in messages[1]["content"]
+    assert "tài liệu đã được ghi vào bộ nhớ" in messages[0]["content"]
+    assert "Không lặp từ, lặp cụm từ" in messages[0]["content"]
     assert "CÂU HỎI:\nCâu hỏi D2L?" in messages[1]["content"]

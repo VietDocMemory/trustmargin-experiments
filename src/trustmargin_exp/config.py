@@ -34,6 +34,8 @@ class Config:
     max_score_prompt_tokens: int
     repetition_penalty: float
     no_repeat_ngram_size: int
+    d2l_repetition_penalty: float
+    d2l_no_repeat_ngram_size: int
     top_k: int
     lambda_bind: float
     tau: float
@@ -69,6 +71,8 @@ def load_config(path: str | Path | None = None) -> Config:
         max_score_prompt_tokens=int(cfg["scoring"]["max_prompt_tokens"]),
         repetition_penalty=float(cfg["generation"]["repetition_penalty"]),
         no_repeat_ngram_size=int(cfg["generation"]["no_repeat_ngram_size"]),
+        d2l_repetition_penalty=float(cfg["generation"].get("d2l_repetition_penalty", 1.1)),
+        d2l_no_repeat_ngram_size=int(cfg["generation"].get("d2l_no_repeat_ngram_size", 4)),
         top_k=int(cfg["rag"]["top_k"]),
         lambda_bind=float(cfg["trustmargin"]["lambda_bind"]),
         tau=float(cfg["trustmargin"]["tau"]),
