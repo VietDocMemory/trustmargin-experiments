@@ -1,10 +1,10 @@
 base_model: google/gemma-2-2b-it
 generation:
-  max_new_tokens: 128
-  max_retry_new_tokens: 256
+  max_new_tokens: 256
+  max_retry_new_tokens: 384
   max_prompt_tokens: 4096
-  repetition_penalty: 1.1
-  no_repeat_ngram_size: 4
+  repetition_penalty: 1.0
+  no_repeat_ngram_size: 0
   do_sample: false
   temperature: 0.0
 scoring:
