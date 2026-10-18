@@ -86,11 +86,11 @@ class GemmaBackend:
                 "Chỉ sử dụng thông tin trong NGỮ CẢNH; không suy đoán hoặc bổ sung "
                 "kiến thức bên ngoài.\n"
                 f"Nếu NGỮ CẢNH không đủ thông tin, chỉ trả lời: \"{ABSTENTION}\"\n"
-                "Trả lời trực tiếp và ngắn gọn, chỉ nêu thông tin cần thiết để giải quyết "
-                "đầy đủ câu hỏi. Nếu câu hỏi yêu cầu so sánh, nêu rõ từng đối tượng và "
-                "điểm khác biệt được hỏi. Có thể diễn đạt lại cho gọn nhưng phải giữ "
-                "nguyên ý nghĩa, điều kiện, con số và đối tượng áp dụng trong NGỮ CẢNH.\n"
-                "Không chép toàn bộ đoạn định nghĩa khi chỉ cần một phần của nó. "
+                "Trả lời trực tiếp những gì câu hỏi yêu cầu, với độ dài vừa đủ để "
+                "nêu đầy đủ các ý cần thiết. Lược bỏ chi tiết trong NGỮ CẢNH không "
+                "liên quan đến câu hỏi. Có thể diễn đạt lại cho gọn, nhưng phải giữ "
+                "chính xác ý nghĩa, đối tượng áp dụng, điều kiện, ngoại lệ, con số "
+                "và mốc thời gian; không rút gọn nếu việc đó làm thay đổi ý nghĩa.\n"
                 "Không thêm tiêu đề, giải thích ngoài câu hỏi hoặc nhãn nguồn."
             )
             messages = [

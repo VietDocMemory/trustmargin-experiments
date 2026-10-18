@@ -31,9 +31,10 @@ def test_rag_prompt_uses_new_grounding_instruction_without_citations():
 
     messages = backend.tokenizer.messages
     assert [message["role"] for message in messages] == ["system", "user"]
-    assert "Bạn là VietRAG Bot, một trợ lý trả lời bằng tiếng Việt." in messages[0]["content"]
-    assert "Tuân thủ các quy tắc sau" in messages[0]["content"]
+    assert "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt." in messages[0]["content"]
     assert "không suy đoán" in messages[0]["content"]
+    assert "Trả lời trực tiếp những gì câu hỏi yêu cầu" in messages[0]["content"]
+    assert "điều kiện, ngoại lệ, con số" in messages[0]["content"]
     assert "[Nguồn" not in messages[0]["content"]
     assert "NGỮ CẢNH:" in messages[1]["content"]
     assert "Bằng chứng một\n\nBằng chứng hai" in messages[1]["content"]
