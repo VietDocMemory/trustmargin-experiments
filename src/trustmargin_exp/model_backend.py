@@ -86,7 +86,7 @@ class GemmaBackend:
                 "Tuân thủ các quy tắc sau: chỉ sử dụng thông tin trong phần NGỮ CẢNH để trả lời\n"
                 "câu hỏi; không suy đoán và không bổ sung kiến thức bên ngoài. Nếu ngữ cảnh không\n"
                 f"đủ để trả lời, hãy trả lời đúng một câu: \"{ABSTENTION}\" "
-                "Chỉ xuất phần nội dung câu trả lời. Không thêm nhãn, tiêu đề, chú thích, "
+                "Chỉ xuất phần nội dung câu trả lời. Không dùng từ hoặc ký tự thuộc ngôn ngữ khác, không thêm nhãn, tiêu đề, chú thích, "
                 "trích dẫn hay các cụm như \"Nguồn\", \"Ngữ cảnh\", \"Theo tài liệu\". "
                 "Nếu có thông tin phù hợp, sao chép nguyên văn một hoặc nhiều câu hoàn chỉnh "
                 "từ NGỮ CẢNH; không tự ý đổi từ, diễn đạt lại hoặc cắt giữa câu."
