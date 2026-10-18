@@ -24,6 +24,24 @@ def row(sample_id, split="validation"):
 
 
 class EvalPipelineTests(unittest.TestCase):
+    def test_looping_d2l_falls_back_to_rag_with_cached_scores(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "scored.jsonl"
+            sample = row("loop")
+            sample["d2l_answer"] = "Quy chuẩn áp dụng " + "dịch vụ, " * 30
+            source.write_text(json.dumps(sample, ensure_ascii=False) + "\n", encoding="utf-8")
+            report = run_eval(
+                source, root / "results.jsonl", root / "report.json",
+                SimpleNamespace(lambda_bind=0.0, tau=2.0),
+            )
+            result = json.loads((root / "results.jsonl").read_text(encoding="utf-8"))
+            self.assertEqual(result["selected_source"], "rag")
+            self.assertEqual(result["selection_override_reason"], "d2l_repetition_loop")
+            self.assertEqual(result["final_answer"], "correct")
+            self.assertEqual(report["candidate_diagnostics"]["d2l_repetition_override"], 1)
+            self.assertEqual(report["selection_counts"], {"d2l": 0, "rag": 1})
+
     def test_oracle_and_rearbitration_use_cached_scores(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

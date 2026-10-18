@@ -5,6 +5,7 @@ import os
 from contextlib import contextmanager
 from pathlib import Path
 
+from .candidate_quality import has_repetition_loop
 from .config import Config
 from .likelihood import teacher_forced_log_likelihood
 from .text import ABSTENTION, looks_vietnamese, normalize_abstention
@@ -121,7 +122,7 @@ class GemmaBackend:
             raise ValueError("Prompt overhead exceeds configured token budget")
         return prompt_ids
 
-    def _generate_once(self, prompt_ids: list[int], max_new_tokens: int, adapter=None):
+    def _generate_once(self, prompt_ids: list[int], max_new_tokens: int, adapter=None, anti_repeat: bool = False):
         torch = self.torch
         self.model.reset()
         input_ids = torch.tensor([prompt_ids], device=self.device)
@@ -142,8 +143,8 @@ class GemmaBackend:
                     output = self.model.generate(
                         input_ids=input_ids, max_new_tokens=max_new_tokens,
                         do_sample=False, pad_token_id=self.tokenizer.pad_token_id,
-                        repetition_penalty=self.config.repetition_penalty,
-                        no_repeat_ngram_size=self.config.no_repeat_ngram_size,
+                        repetition_penalty=1.15 if anti_repeat else self.config.repetition_penalty,
+                        no_repeat_ngram_size=4 if anti_repeat else self.config.no_repeat_ngram_size,
                     )
             generated = output[0, len(prompt_ids):]
             eos_ids = self.tokenizer.eos_token_id
@@ -158,11 +159,16 @@ class GemmaBackend:
             prompt_ids, self.config.max_new_tokens, adapter
         )
         initially_truncated = len(generated) >= self.config.max_new_tokens and not ended_with_eos
+        initial_answer = self.tokenizer.decode(generated, skip_special_tokens=True).strip()
+        initial_repetition_loop = adapter is not None and has_repetition_loop(initial_answer)
         retried = False
-        if initially_truncated and self.config.max_retry_new_tokens > self.config.max_new_tokens:
+        repetition_retry = False
+        retry_budget = self.config.max_retry_new_tokens
+        if initial_repetition_loop or (initially_truncated and retry_budget > self.config.max_new_tokens):
             retried = True
+            repetition_retry = initial_repetition_loop
             generated, ended_with_eos = self._generate_once(
-                prompt_ids, self.config.max_retry_new_tokens, adapter
+                prompt_ids, retry_budget, adapter, anti_repeat=initial_repetition_loop
             )
         raw_answer = self.tokenizer.decode(generated, skip_special_tokens=True).strip()
         answer, abstention_normalized = normalize_abstention(raw_answer)
@@ -176,6 +182,9 @@ class GemmaBackend:
             "answer_tokens": int(len(generated)),
             "initially_truncated": initially_truncated,
             "retried": retried,
+            "initial_repetition_loop": initial_repetition_loop,
+            "repetition_retry": repetition_retry,
+            "repetition_loop": adapter is not None and has_repetition_loop(raw_answer),
             "final_truncated": final_truncated,
             "ended_with_eos": ended_with_eos,
             "abstention_normalized": abstention_normalized,

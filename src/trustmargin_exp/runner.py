@@ -10,7 +10,7 @@ from pathlib import Path
 from .config import Config
 from .logging_utils import read_jsonl, write_jsonl
 from .metrics import summarize
-from .trustmargin import arbitrate
+from .trustmargin import arbitrate, arbitrate_candidate
 
 
 def _stable_id(row: dict, index: int) -> str:
@@ -302,7 +302,7 @@ def run_eval(input_path: str | Path, output_path: str | Path, report_path: str |
         oracle_report["sweep"] = {"label": "validation-tuned", "trials": trials, "best": best}
     output_rows = []
     for row in rows:
-        decision = arbitrate(row["scores"], lam, threshold)
+        decision = arbitrate_candidate(row, lam, threshold)
         row.update(decision)
         row["final_answer"] = row[f'{decision["selected_source"]}_answer']
         output_rows.append(row)

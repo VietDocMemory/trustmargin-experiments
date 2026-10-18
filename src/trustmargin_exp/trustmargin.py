@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import math
 
+from .candidate_quality import has_repetition_loop
+
 
 def arbitrate(scores: dict, lambda_bind: float = 0.5, tau: float = -1.5) -> dict:
     for view in ("q_only", "q_context", "context_only"):
@@ -25,3 +27,16 @@ def arbitrate(scores: dict, lambda_bind: float = 0.5, tau: float = -1.5) -> dict
         "tau": tau,
         "selected_source": selected,
     }
+
+
+def arbitrate_candidate(row: dict, lambda_bind: float, tau: float) -> dict:
+    """Apply the TrustMargin score and reject a looping D2L candidate."""
+    decision = arbitrate(row["scores"], lambda_bind, tau)
+    diagnostics = row.get("candidate_diagnostics", {}).get("d2l", {})
+    looping = bool(diagnostics.get("repetition_loop")) or has_repetition_loop(row["d2l_answer"])
+    decision["d2l_repetition_loop"] = looping
+    decision["selection_override_reason"] = None
+    if looping and decision["selected_source"] == "d2l":
+        decision["selected_source"] = "rag"
+        decision["selection_override_reason"] = "d2l_repetition_loop"
+    return decision

@@ -70,13 +70,16 @@ def log_experiment(
             scalars["gpu/max_peak_allocated_mb"] = max(gpu_peaks)
         scalars["selection/rag_count"] = sum(row.get("selected_source") == "rag" for row in rows)
         scalars["selection/d2l_count"] = sum(row.get("selected_source") == "d2l" for row in rows)
+        scalars["quality/d2l_repetition_loop_count"] = report["candidate_diagnostics"].get("d2l_repetition_loop", 0)
+        scalars["quality/d2l_repetition_retry_count"] = report["candidate_diagnostics"].get("d2l_repetition_retry", 0)
+        scalars["quality/d2l_repetition_override_count"] = report["candidate_diagnostics"].get("d2l_repetition_override", 0)
         scalars["adapter/cache_hit_count"] = sum(bool(row.get("adapter_cache_hit")) for row in rows)
         if report.get("sweep"):
             best = report["sweep"]["best"]
             scalars.update({f"sweep/best_{key}": value for key, value in best.items()})
         run.log(scalars)
 
-        columns = ["id", "question", "d2l_answer", "rag_answer", "selected_source", "final_answer", "gold_answers", "m_prior", "m_bind", "trust_score"]
+        columns = ["id", "question", "d2l_answer", "rag_answer", "selected_source", "final_answer", "gold_answers", "m_prior", "m_bind", "trust_score", "d2l_repetition_loop", "selection_override_reason"]
         table = wandb.Table(columns=columns)
         for row in rows:
             table.add_data(*(json.dumps(row[key], ensure_ascii=False) if key == "gold_answers" else row.get(key) for key in columns))

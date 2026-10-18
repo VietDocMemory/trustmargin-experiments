@@ -56,7 +56,7 @@ def summarize(
     tau: float,
     both_wrong_f1_threshold: float = 0.2,
 ) -> dict:
-    from .trustmargin import arbitrate
+    from .trustmargin import arbitrate_candidate
 
     sums = {source: Counter() for source in ("d2l", "rag", "oracle", "tm")}
     counts = Counter()
@@ -68,7 +68,7 @@ def summarize(
         # Oracle uses token F1, then EM; ties deterministically prefer D2L.
         d_key, r_key = (d["token_f1"], d["exact_match"]), (r["token_f1"], r["exact_match"])
         oracle = r if r_key > d_key else d
-        selected = arbitrate(row["scores"], lambda_bind, tau)["selected_source"]
+        selected = arbitrate_candidate(row, lambda_bind, tau)["selected_source"]
         tm = r if selected == "rag" else d
         for source, metrics in (("d2l", d), ("rag", r), ("oracle", oracle), ("tm", tm)):
             sums[source].update(metrics)
@@ -92,7 +92,7 @@ def summarize(
     ):
         counts[key] += 0
     selection_counts = Counter(
-        arbitrate(row["scores"], lambda_bind, tau)["selected_source"] for row in rows
+        arbitrate_candidate(row, lambda_bind, tau)["selected_source"] for row in rows
     )
     latency_keys = sorted({
         key
@@ -110,10 +110,16 @@ def summarize(
     }
     diagnostic_summary = Counter()
     for row in rows:
+        decision = arbitrate_candidate(row, lambda_bind, tau)
+        diagnostic_summary["d2l_repetition_loop"] += int(decision["d2l_repetition_loop"])
+        diagnostic_summary["d2l_repetition_override"] += int(
+            decision["selection_override_reason"] is not None
+        )
         for source, values in row.get("candidate_diagnostics", {}).items():
             for key in (
                 "initially_truncated", "retried", "final_truncated",
                 "abstention_normalized", "looks_vietnamese",
+                "initial_repetition_loop", "repetition_retry",
             ):
                 diagnostic_summary[f"{source}_{key}"] += int(bool(values.get(key)))
     return {
