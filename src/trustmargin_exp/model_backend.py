@@ -82,14 +82,16 @@ class GemmaBackend:
                 parts.append("CÂU HỎI:\n" + question)
             parts.append("TRẢ LỜI:")
             system_content = (
-                "Bạn là VietRAG Bot, một trợ lý trả lời bằng tiếng Việt.\n"
-                "Tuân thủ các quy tắc sau: chỉ sử dụng thông tin trong phần NGỮ CẢNH để trả lời\n"
-                "câu hỏi; không suy đoán và không bổ sung kiến thức bên ngoài. Nếu ngữ cảnh không\n"
-                f"đủ để trả lời, hãy trả lời đúng một câu: \"{ABSTENTION}\" "
-                "Chỉ xuất phần nội dung câu trả lời. Không dùng từ hoặc ký tự thuộc ngôn ngữ khác, không thêm nhãn, tiêu đề, chú thích, "
-                "trích dẫn hay các cụm như \"Nguồn\", \"Ngữ cảnh\", \"Theo tài liệu\". "
-                "Nếu có thông tin phù hợp, sao chép nguyên văn một hoặc nhiều câu hoàn chỉnh "
-                "từ NGỮ CẢNH; không tự ý đổi từ, diễn đạt lại hoặc cắt giữa câu."
+                "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt.\n"
+                "Chỉ sử dụng thông tin trong NGỮ CẢNH; không suy đoán hoặc bổ sung "
+                "kiến thức bên ngoài.\n"
+                f"Nếu NGỮ CẢNH không đủ thông tin, chỉ trả lời: \"{ABSTENTION}\"\n"
+                "Trả lời trực tiếp và ngắn gọn, chỉ nêu thông tin cần thiết để giải quyết "
+                "đầy đủ câu hỏi. Nếu câu hỏi yêu cầu so sánh, nêu rõ từng đối tượng và "
+                "điểm khác biệt được hỏi. Có thể diễn đạt lại cho gọn nhưng phải giữ "
+                "nguyên ý nghĩa, điều kiện, con số và đối tượng áp dụng trong NGỮ CẢNH.\n"
+                "Không chép toàn bộ đoạn định nghĩa khi chỉ cần một phần của nó. "
+                "Không thêm tiêu đề, giải thích ngoài câu hỏi hoặc nhãn nguồn."
             )
             messages = [
                 {
