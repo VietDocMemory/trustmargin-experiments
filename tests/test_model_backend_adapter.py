@@ -2,7 +2,7 @@ from contextlib import nullcontext
 from types import SimpleNamespace
 import unittest
 
-from trustmargin_exp.model_backend import GemmaBackend
+from trustmargin_exp.model_backend import ModelBackend
 
 
 class AdapterLifecycleTests(unittest.TestCase):
@@ -20,7 +20,7 @@ class AdapterLifecycleTests(unittest.TestCase):
                 events.append("generate")
                 raise RuntimeError("generation stopped for test")
 
-        backend = GemmaBackend.__new__(GemmaBackend)
+        backend = ModelBackend.__new__(ModelBackend)
         backend.model = Model()
         backend.torch = SimpleNamespace(tensor=lambda value, device: value, inference_mode=nullcontext)
         backend.device = "cpu"
@@ -28,6 +28,8 @@ class AdapterLifecycleTests(unittest.TestCase):
             max_new_tokens=1,
             repetition_penalty=1.1,
             no_repeat_ngram_size=4,
+            d2l_repetition_penalty=1.0,
+            d2l_no_repeat_ngram_size=0,
         )
         backend.tokenizer = SimpleNamespace(pad_token_id=0)
 

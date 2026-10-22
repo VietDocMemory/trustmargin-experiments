@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from trustmargin_exp.config import load_config
-from trustmargin_exp.model_backend import GemmaBackend, _in_directory
+from trustmargin_exp.model_backend import ModelBackend, _in_directory
 
 
 def main() -> None:
@@ -32,10 +32,9 @@ def main() -> None:
         raise ValueError("A PDF page has no extractable text; OCR is required")
 
     config = load_config()
-    backend = GemmaBackend(config)
+    backend = ModelBackend(config)
     ctx_tokenizer = backend.tokenizer
-    template = config.d2l_repo / "chat_templates/google/gemma-2-2b-it.jinja"
-    ctx_tokenizer.chat_template = template.read_text(encoding="utf-8")
+    # Keep the tokenizer's native template for the configured base model.
     max_context = backend.model.ctx_encoder.base_model.config.max_position_embeddings
     args.output.mkdir(parents=True, exist_ok=True)
     digest = hashlib.sha256(pdf.read_bytes()).hexdigest()
@@ -43,7 +42,7 @@ def main() -> None:
                 "max_context_tokens": max_context, "pages": []}
     for index, page in enumerate(pages, 1):
         input_ids = ctx_tokenizer.apply_chat_template(
-            [{"role": "system", "content": ""}, {"role": "user", "content": page.strip()}],
+            [{"role": "user", "content": page.strip()}],
             tokenize=True, add_generation_prompt=True, add_special_tokens=False,
         )
         if len(input_ids) > max_context:

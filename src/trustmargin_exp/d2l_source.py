@@ -5,11 +5,11 @@ import hashlib
 import time
 from pathlib import Path
 
-from .model_backend import GemmaBackend, _in_directory
+from .model_backend import ModelBackend, _in_directory
 
 
 class D2LSource:
-    def __init__(self, backend: GemmaBackend, cache_dir: str | Path):
+    def __init__(self, backend: ModelBackend, cache_dir: str | Path):
         self.backend = backend
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)

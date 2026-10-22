@@ -56,8 +56,8 @@ def load_config(path: str | Path | None = None) -> Config:
     config_path = Path(path) if path else ROOT / "configs/default.yaml"
     with config_path.open(encoding="utf-8") as handle:
         cfg = yaml.safe_load(handle)
-    if cfg["base_model"] != "google/gemma-2-2b-it":
-        raise ValueError("This experiment requires google/gemma-2-2b-it")
+    if cfg["base_model"] != "Qwen/Qwen3-4B-Instruct-2507":
+        raise ValueError("This experiment requires Qwen/Qwen3-4B-Instruct-2507")
     if cfg["generation"]["do_sample"] or cfg["generation"]["temperature"] != 0:
         raise ValueError("Generation must be deterministic")
     rag_repo = _path("RAG_REPO_PATH", ROOT.parent / "vietnamese-rag-system")
@@ -83,6 +83,6 @@ def load_config(path: str | Path | None = None) -> Config:
         both_wrong_f1_threshold=float(cfg["evaluation"]["both_wrong_f1_threshold"]),
         rag_repo=rag_repo,
         d2l_repo=d2l_repo,
-        d2l_checkpoint=_path("D2L_CHECKPOINT", d2l_repo / "trained_d2l/gemma_demo/checkpoint-80000/pytorch_model.bin"),
+        d2l_checkpoint=_path("D2L_CHECKPOINT", d2l_repo / "trained_d2l/qwen_4b_d2l/checkpoint-20000/pytorch_model.bin"),
         rag_python=_executable_path("RAG_PYTHON", rag_repo / ".venv" / python_name),
     )

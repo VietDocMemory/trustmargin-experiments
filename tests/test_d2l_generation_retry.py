@@ -2,7 +2,7 @@ import unittest
 from contextlib import nullcontext
 from types import SimpleNamespace
 
-from trustmargin_exp.model_backend import GemmaBackend
+from trustmargin_exp.model_backend import ModelBackend
 
 
 class CharacterTokenizer:
@@ -12,7 +12,7 @@ class CharacterTokenizer:
 
 class GenerationRetryTests(unittest.TestCase):
     def test_generation_settings_are_separate_for_d2l_and_rag(self):
-        backend = object.__new__(GemmaBackend)
+        backend = object.__new__(ModelBackend)
         backend.config = SimpleNamespace(
             repetition_penalty=1.0, no_repeat_ngram_size=0,
             d2l_repetition_penalty=1.1, d2l_no_repeat_ngram_size=4,
@@ -44,7 +44,7 @@ class GenerationRetryTests(unittest.TestCase):
         )
 
     def make_backend(self, first_answer, retry_answer):
-        backend = object.__new__(GemmaBackend)
+        backend = object.__new__(ModelBackend)
         backend.config = SimpleNamespace(max_new_tokens=256, max_retry_new_tokens=384)
         backend.tokenizer = CharacterTokenizer()
         calls = []

@@ -1,4 +1,4 @@
-from trustmargin_exp.model_backend import GemmaBackend
+from trustmargin_exp.model_backend import ModelBackend
 
 
 class RecordingTokenizer:
@@ -19,7 +19,7 @@ class RecordingTokenizer:
 
 
 def backend_with_recording_tokenizer():
-    backend = object.__new__(GemmaBackend)
+    backend = object.__new__(ModelBackend)
     backend.tokenizer = RecordingTokenizer()
     return backend
 
@@ -32,10 +32,13 @@ def test_rag_prompt_uses_new_grounding_instruction_without_citations():
     messages = backend.tokenizer.messages
     assert [message["role"] for message in messages] == ["system", "user"]
     assert "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt." in messages[0]["content"]
-    assert "không suy đoán" in messages[0]["content"]
-    assert "chỉ nêu các thông tin cần" in messages[0]["content"]
-    assert "không chép toàn bộ" in messages[0]["content"]
-    assert "điều kiện, ngoại lệ, con số" in messages[0]["content"]
+    assert "Không dùng kiến thức bên ngoài" in messages[0]["content"]
+    assert "xác định thuộc tính trực tiếp" in messages[0]["content"]
+    assert "dù NGỮ CẢNH không chứa toàn bộ" in messages[0]["content"]
+    assert "được phép kết hợp" in messages[0]["content"]
+    assert "Không suy luận từ số thứ tự" in messages[0]["content"]
+    assert "Trả lời ngắn nhất có thể" in messages[0]["content"]
+    assert "Tài liệu không đề cập." in messages[0]["content"]
     assert "[Nguồn" not in messages[0]["content"]
     assert "NGỮ CẢNH:" in messages[1]["content"]
     assert "Bằng chứng một\n\nBằng chứng hai" in messages[1]["content"]

@@ -40,7 +40,7 @@ def teacher_forced_log_likelihood(model, tokenizer, prompt_ids: list[int], answe
     ids = torch.tensor([prompt_ids + answer_ids], dtype=torch.long, device=device)
     with torch.inference_mode():
         try:
-            # Gemma can project logits only for the answer boundary/span. This
+            # The base model can project logits only for the answer boundary/span. This
             # avoids allocating [prompt_length, vocabulary_size] on a 12 GB GPU.
             logits = model(
                 input_ids=ids,

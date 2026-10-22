@@ -5,14 +5,14 @@ This is a research adaptation of [TrustMargin (arXiv:2606.08397)](https://arxiv.
 ## Architecture
 
 ```text
-question ── RAGRetriever (Qdrant/BGE) ── passages ── Gemma base ── RAG answer
-       └── document ── D2L hypernetwork ── LoRA ── same Gemma ── D2L answer
+question ── RAGRetriever (Qdrant/BGE) ── passages ── Qwen base ── RAG answer
+       └── document ── D2L hypernetwork ── LoRA ── same Qwen ── D2L answer
                                       both candidates + passages
                                                  │
-                          six base-Gemma likelihoods → margin → decision
+                          six base-Qwen likelihoods → margin → decision
 ```
 
-The RAG retriever runs in a separate Python environment because its `transformers<4.40` requirement conflicts with D2L's `transformers==4.51.3`. The retriever process exits before Gemma loads. Both answer paths and all likelihood scores use the **same checkpoint-loaded `google/gemma-2-2b-it` base model** and its tokenizer. The D2L context encoder is an additional model used only to generate LoRA weights. The RAG repository's Ollama/Qwen generator is never called. See [architecture audit](docs/ARCHITECTURE_AUDIT.md).
+The RAG retriever runs in a separate Python environment. The retriever process exits before Qwen loads. Both answer paths and all likelihood scores use the **same checkpoint-loaded `Qwen/Qwen3-4B-Instruct-2507` base model** and its tokenizer. The D2L context encoder is an additional model used only to generate LoRA weights. TrustMargin uses the RAG repository's retriever, but generates both answers in its own process. See [architecture audit](docs/ARCHITECTURE_AUDIT.md).
 
 ## Installation
 
@@ -35,7 +35,7 @@ Copy `.env.example` and export the values into your shell; this project does not
 ```bash
 export RAG_REPO_PATH=../vietnamese-rag-system
 export D2L_REPO_PATH=../doc-to-lora
-export D2L_CHECKPOINT=../doc-to-lora/trained_d2l/gemma_demo/checkpoint-80000/pytorch_model.bin
+export D2L_CHECKPOINT=../doc-to-lora/trained_d2l/qwen_4b_d2l/checkpoint-20000/pytorch_model.bin
 export RAG_PYTHON=$PWD/.venv-rag/bin/python
 ```
 
@@ -66,7 +66,9 @@ This writes `outputs/candidates.jsonl`. It caches generated LoRA tensors under `
 python scripts/score_candidates.py
 ```
 
-This writes `outputs/scored_candidates.jsonl` with the six length-normalized answer-only teacher-forced log likelihoods. The base Gemma scores both candidates under question-only, question plus retrieved context, and context-only prompts. Prompt tokens are excluded. Empty answers are rejected.
+This writes `outputs/scored_candidates.jsonl` with the six length-normalized answer-only teacher-forced log likelihoods. The base Qwen scores both candidates under question-only, question plus retrieved context, and context-only prompts. Prompt tokens are excluded. Empty answers are rejected.
+
+The default `tau` was tuned for Gemma candidates and must be recalibrated on validation data for Qwen. Regenerate candidates and scores into new output paths; older cached files refer to Gemma.
 
 ## Run TrustMargin and oracle evaluation
 

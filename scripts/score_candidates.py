@@ -6,7 +6,7 @@ from trustmargin_exp.runner import score_candidates
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Cache six base-Gemma likelihood views per sample")
+    parser = argparse.ArgumentParser(description="Cache six base-model likelihood views per sample")
     parser.add_argument("--input", type=Path, default=ROOT / "outputs/candidates.jsonl")
     parser.add_argument("--output", type=Path, default=ROOT / "outputs/scored_candidates.jsonl")
     parser.add_argument("--config", type=Path)

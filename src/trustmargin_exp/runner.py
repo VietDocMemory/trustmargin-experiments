@@ -1,4 +1,4 @@
-"""Three-stage experiment runner. Re-arbitration never loads Gemma."""
+"""Three-stage experiment runner. Re-arbitration never loads the base model."""
 from __future__ import annotations
 
 import asyncio
@@ -128,10 +128,10 @@ def generate_candidates(
             raise FileNotFoundError(f"Document not found: {sample['document_path']}")
     samples = asyncio.run(_retrieve_all(samples, config))
     # The RAG worker has exited; BGE and reranker no longer occupy GPU memory.
-    from .model_backend import GemmaBackend
+    from .model_backend import ModelBackend
     from .d2l_source import D2LSource
 
-    backend = GemmaBackend(config)
+    backend = ModelBackend(config)
     d2l = D2LSource(backend, Path(output_path).parent / "adapter_cache")
     outputs = []
     for sample in samples:
@@ -198,9 +198,9 @@ def score_candidates(input_path: str | Path, output_path: str | Path, config: Co
         raise FileExistsError(f"{output_path} already exists; cached scores are preserved")
     rows = read_jsonl(input_path)
     validate_alignment(rows)
-    from .model_backend import GemmaBackend
+    from .model_backend import ModelBackend
 
-    backend = GemmaBackend(config)
+    backend = ModelBackend(config)
     for row in rows:
         if row.get("base_model") != config.base_model or row.get("tokenizer") != config.base_model:
             raise ValueError(f"Model/tokenizer mismatch for {row['id']}")

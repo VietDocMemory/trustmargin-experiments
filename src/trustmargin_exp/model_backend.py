@@ -1,4 +1,4 @@
-"""One checkpoint-loaded Gemma base model for both candidates and scoring."""
+"""One checkpoint-loaded base model for both candidates and scoring."""
 from __future__ import annotations
 
 import os
@@ -21,7 +21,7 @@ def _in_directory(path: Path):
         os.chdir(previous)
 
 
-class GemmaBackend:
+class ModelBackend:
     def __init__(self, config: Config):
         import sys
         import torch
@@ -94,15 +94,25 @@ class GemmaBackend:
             else:
                 system_content = (
                     "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt.\n"
-                    "Chỉ sử dụng thông tin trong NGỮ CẢNH; không suy đoán hoặc bổ sung "
-                    "kiến thức bên ngoài.\n"
-                    f"Nếu NGỮ CẢNH không đủ thông tin, chỉ trả lời: \"{ABSTENTION}\"\n"
-                    "Trả lời trực tiếp và chỉ nêu các thông tin cần để giải quyết đầy đủ "
-                    "đúng điều câu hỏi yêu cầu. Khi chỉ hỏi một thuộc tính hoặc điểm khác biệt, "
-                    "nêu thuộc tính đó cho từng đối tượng liên quan; không chép toàn bộ "
-                    "định nghĩa hay các thuộc tính khác. Có thể diễn đạt lại cho gọn, "
-                    "nhưng phải giữ đúng đối tượng, điều kiện, ngoại lệ, con số và mốc thời gian.\n"
-                    "Không thêm tiêu đề, giải thích ngoài câu hỏi hoặc nhãn nguồn."
+                    "Chỉ sử dụng thông tin được nêu rõ trong NGỮ CẢNH. Không dùng kiến "
+                    "thức bên ngoài và không bịa thêm thông tin.\n"
+                    "Trước khi trả lời, xác định thuộc tính trực tiếp mà câu hỏi yêu cầu, "
+                    "như con số, thời hạn, điều kiện, đối tượng, bước thực hiện hoặc điểm "
+                    "khác biệt.\n"
+                    "Nếu NGỮ CẢNH có nêu rõ thông tin trả lời cho thuộc tính được hỏi, hãy "
+                    "trả lời, dù NGỮ CẢNH không chứa toàn bộ thông tin nền liên quan đến "
+                    "chủ đề. Nếu câu hỏi cần so sánh hoặc kết hợp nhiều ý, được phép kết "
+                    "hợp các thông tin được nêu rõ từ nhiều đoạn NGỮ CẢNH; không được suy "
+                    "diễn thêm ngoài các thông tin đó.\n"
+                    f"Chỉ trả lời đúng: \"{ABSTENTION}\" khi NGỮ CẢNH không nêu rõ thông "
+                    "tin cụ thể cần trả lời, hoặc không thể xác định câu trả lời từ NGỮ CẢNH.\n"
+                    "Không suy luận từ số thứ tự điều, khoản, mục, danh sách, số thành viên, "
+                    "số năm hoặc thông tin khác nếu chúng không được nêu rõ là câu trả lời "
+                    "cho câu hỏi.\n"
+                    "Chỉ xuất ra câu trả lời trực tiếp. Không mở đầu bằng “Theo ngữ cảnh”, "
+                    "không thêm tiêu đề, Markdown, nhãn nguồn hoặc diễn giải ngoài yêu cầu. "
+                    "Trả lời ngắn nhất có thể nhưng vẫn giữ đủ con số, điều kiện, đối tượng "
+                    "và ý nghĩa cần thiết để trả lời câu hỏi."
                 )
             messages = [
                 {
