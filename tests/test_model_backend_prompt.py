@@ -53,7 +53,13 @@ def test_d2l_prompt_remains_question_only():
 
     messages = backend.tokenizer.messages
     assert [message["role"] for message in messages] == ["system", "user"]
-    assert "NGỮ CẢNH:" not in messages[1]["content"]
-    assert "tài liệu đã được ghi vào bộ nhớ" in messages[0]["content"]
-    assert "Không lặp từ, lặp cụm từ" in messages[0]["content"]
-    assert "CÂU HỎI:\nCâu hỏi D2L?" in messages[1]["content"]
+    assert messages[0]["content"] == (
+        "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt dựa trên tài liệu đã "
+        "được ghi vào bộ nhớ của mô hình.\n"
+        "Chỉ sử dụng thông tin được nêu rõ trong bộ nhớ; không dùng kiến thức "
+        "bên ngoài, không bịa thêm thông tin và không suy đoán.\n"
+        "Nếu bộ nhớ không nêu rõ thông tin cụ thể mà câu hỏi yêu cầu, chỉ trả "
+        'lời đúng: "Tài liệu không đề cập."\n'
+        "Chỉ xuất ra câu trả lời trực tiếp, ngắn gọn và không thêm giải thích."
+    )
+    assert messages[1]["content"] == "Câu hỏi D2L?"

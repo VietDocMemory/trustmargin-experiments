@@ -76,35 +76,23 @@ class ModelBackend:
         context_text = "\n\n".join(contexts or [])
 
         def render(text: str) -> list[int]:
-            parts = []
-            if contexts is not None:
-                parts.append("NGỮ CẢNH:\n" + text)
-            if question:
-                parts.append("CÂU HỎI:\n" + question)
-            parts.append("TRẢ LỜI:")
             if contexts is None:
                 system_content = (
                     "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt dựa trên tài liệu đã "
                     "được ghi vào bộ nhớ của mô hình.\n"
-                    "Chỉ dùng thông tin được nêu rõ trong bộ nhớ; không dùng kiến thức bên "
-                    "ngoài, không bịa thêm thông tin và không suy diễn từ thông tin cùng chủ đề.\n"
-                    "Trước khi trả lời, xác định thuộc tính trực tiếp mà câu hỏi yêu cầu, "
-                    "ví dụ: con số, thời hạn, điều kiện, đối tượng, bước thực hiện hoặc điểm "
-                    "khác biệt.\n"
-                    "Nếu bộ nhớ nêu rõ thông tin trả lời cho thuộc tính được hỏi, hãy trả lời, "
-                    "dù không có toàn bộ thông tin nền liên quan đến chủ đề. Nếu câu hỏi cần "
-                    "so sánh hoặc kết hợp nhiều ý, chỉ kết hợp các thông tin được nêu rõ trong "
-                    "bộ nhớ.\n"
-                    f"Chỉ trả lời đúng: \"{ABSTENTION}\" khi bộ nhớ không nêu rõ thông tin "
-                    "cụ thể cần trả lời, hoặc không thể xác định câu trả lời từ bộ nhớ.\n"
-                    "Không suy luận từ số thứ tự điều, khoản, mục, danh sách, số thành viên, "
-                    "số năm hoặc thông tin khác nếu chúng không được nêu rõ là câu trả lời "
-                    "cho câu hỏi.\n"
-                    "Chỉ xuất ra câu trả lời trực tiếp, ngắn nhất có thể nhưng vẫn đủ ý. "
-                    "Không mở đầu bằng “Theo bộ nhớ”, không thêm tiêu đề, Markdown, nhãn nguồn, "
-                    "giải thích thừa, lặp từ hoặc lặp cụm từ."
+                    "Chỉ sử dụng thông tin được nêu rõ trong bộ nhớ; không dùng kiến thức "
+                    "bên ngoài, không bịa thêm thông tin và không suy đoán.\n"
+                    "Nếu bộ nhớ không nêu rõ thông tin cụ thể mà câu hỏi yêu cầu, chỉ trả "
+                    f"lời đúng: \"{ABSTENTION}\"\n"
+                    "Chỉ xuất ra câu trả lời trực tiếp, ngắn gọn và không thêm giải thích."
                 )
+                user_content = question or ""
             else:
+                parts = ["NGỮ CẢNH:\n" + text]
+                if question:
+                    parts.append("CÂU HỎI:\n" + question)
+                parts.append("TRẢ LỜI:")
+                user_content = "\n\n".join(parts)
                 system_content = (
                     "Bạn là trợ lý trả lời câu hỏi bằng tiếng Việt.\n"
                     "Chỉ sử dụng thông tin được nêu rõ trong NGỮ CẢNH. Không dùng kiến "
@@ -132,7 +120,7 @@ class ModelBackend:
                     "role": "system",
                     "content": system_content,
                 },
-                {"role": "user", "content": "\n\n".join(parts)},
+                {"role": "user", "content": user_content},
             ]
             return self.tokenizer.apply_chat_template(
                 messages,
