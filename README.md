@@ -73,9 +73,12 @@ The default `tau` was tuned for Gemma candidates and must be recalibrated on val
 ## Answerability probe
 
 The exported Qwen3-4B TyDiQA+UDHR linear probe is stored under
-`artifacts/answerability_probe/`. Candidate generation evaluates the retrieved passages and
-question with the frozen base model at hidden-state index 21, then records the probability,
-threshold, binary decision, prompt length, and truncation flag in `answerability_probe`.
+`artifacts/answerability_probe/`. Candidate generation scores each of the top eight retrieved
+chunks independently and also scores a combined top-1 plus top-2 passage. It takes the maximum
+of those probabilities so later chunks are not lost to concatenation truncation while the pair
+can still capture simple multi-hop evidence. The frozen base model is read at hidden-state index
+21. The candidate output records every component score, the winning chunk or pair, threshold,
+binary decision, prompt length, and truncation flags in `answerability_probe`.
 
 The default is deliberately non-mutating:
 

@@ -18,6 +18,8 @@ trustmargin:
   tau: -1.38
 answerability_probe:
   enabled: true
+  # Score each of the top-8 chunks independently, also score chunks 1+2
+  # together for multi-hop evidence, then use the maximum probability.
   # Shadow mode records probe decisions without changing the final answer.
   # Switch to hard_gate only after validation on retrieved contexts.
   mode: shadow

@@ -2,8 +2,9 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 
-from trustmargin_exp.answerability_probe import bare_prompt_ids
+from trustmargin_exp.answerability_probe import AnswerabilityProbe, bare_prompt_ids
 from trustmargin_exp.config import ROOT, load_config
 
 
@@ -46,3 +47,60 @@ def test_default_config_enables_frozen_probe_in_shadow_mode():
     with np.load(config.answerability_probe_dir / "probe.npz") as arrays:
         assert set(arrays.files) >= {"weight", "bias", "mean", "scale"}
         assert arrays["weight"].size == 2560
+
+
+class FakeModel:
+    def __call__(self, input_ids, **kwargs):
+        torch = pytest.importorskip("torch")
+        batch_size, sequence_length = input_ids.shape
+        hidden = torch.zeros((batch_size, sequence_length, 2), dtype=torch.float32)
+        # The last non-padding token in each prompt controls the first feature.
+        for row, token_index in enumerate(kwargs["attention_mask"].sum(dim=1) - 1):
+            hidden[row, token_index, 0] = float(row + 1)
+        return type("Output", (), {"hidden_states": (hidden, hidden)})()
+
+
+def test_probe_max_pools_top8_single_and_top2_combined(tmp_path):
+    torch = pytest.importorskip("torch")
+    (tmp_path / "config.json").write_text(
+        json.dumps(
+            {
+                "model": "fake-model",
+                "prompt_style": "bare",
+                "pooling": "last",
+                "hidden_state_index": 1,
+                "hidden_size": 2,
+                "max_len": 100,
+                "threshold": 0.5,
+            }
+        ),
+        encoding="utf-8",
+    )
+    np.savez(
+        tmp_path / "probe.npz",
+        weight=np.array([1.0, 0.0], dtype=np.float32),
+        bias=np.array([0.0], dtype=np.float32),
+        mean=np.zeros(2, dtype=np.float32),
+        scale=np.ones(2, dtype=np.float32),
+    )
+    probe = AnswerabilityProbe(tmp_path, "fake-model", torch, "cpu")
+
+    result = probe.score(
+        FakeModel(),
+        TinyTokenizer(),
+        "question",
+        ["chunk one", "chunk two", "chunk three"],
+        torch,
+    )
+
+    assert result["aggregation"] == "max_top8_single_plus_top2_combined"
+    assert len(result["component_scores"]) == 4
+    assert [item["kind"] for item in result["component_scores"]] == [
+        "single",
+        "single",
+        "single",
+        "top2_combined",
+    ]
+    assert result["winning_kind"] == "top2_combined"
+    assert result["winning_chunk_indices"] == [1, 2]
+    assert result["prob_answerable"] == result["component_scores"][-1]["prob_answerable"]

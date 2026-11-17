@@ -93,7 +93,7 @@ def log_experiment(
             scalars.update({f"sweep/best_{key}": value for key, value in best.items()})
         run.log(scalars)
 
-        columns = ["id", "question", "d2l_answer", "rag_answer", "selected_source", "final_source", "final_answer", "final_override_reason", "gold_answers", "m_prior", "m_bind", "trust_score", "probe_probability", "probe_threshold", "probe_answerable", "d2l_repetition_loop", "selection_override_reason"]
+        columns = ["id", "question", "d2l_answer", "rag_answer", "selected_source", "final_source", "final_answer", "final_override_reason", "gold_answers", "m_prior", "m_bind", "trust_score", "probe_probability", "probe_threshold", "probe_answerable", "probe_winning_kind", "probe_winning_chunks", "probe_component_scores", "d2l_repetition_loop", "selection_override_reason"]
         table = wandb.Table(columns=columns)
         for row in rows:
             probe = row.get("answerability_probe") or {}
@@ -102,8 +102,12 @@ def log_experiment(
                 "probe_probability": probe.get("prob_answerable"),
                 "probe_threshold": probe.get("threshold"),
                 "probe_answerable": probe.get("pred_answerable"),
+                "probe_winning_kind": probe.get("winning_kind"),
+                "probe_winning_chunks": probe.get("winning_chunk_indices"),
+                "probe_component_scores": probe.get("component_scores"),
             }
-            table.add_data(*(json.dumps(values[key], ensure_ascii=False) if key == "gold_answers" else values.get(key) for key in columns))
+            json_columns = {"gold_answers", "probe_winning_chunks", "probe_component_scores"}
+            table.add_data(*(json.dumps(values[key], ensure_ascii=False) if key in json_columns else values.get(key) for key in columns))
         run.log({"decisions": table})
 
         artifact = wandb.Artifact(f"trustmargin-results-{run.id}", type="evaluation")

@@ -182,7 +182,12 @@ def summarize(
             ),
             "binary_accuracy": (answerable_correct + refusal_correct) / len(probe_rows),
             "context_truncated": sum(
-                bool(row["answerability_probe"].get("context_truncated"))
+                bool(
+                    row["answerability_probe"].get(
+                        "any_context_truncated",
+                        row["answerability_probe"].get("context_truncated"),
+                    )
+                )
                 for row in probe_rows
             ),
         }
