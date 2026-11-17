@@ -63,6 +63,16 @@ class ModelBackend:
             ).eval()
             self.tokenizer = get_tokenizer(config.base_model)
         self.model.reset()
+        self.answerability_probe = None
+        if config.answerability_probe_enabled:
+            from .answerability_probe import AnswerabilityProbe
+
+            self.answerability_probe = AnswerabilityProbe(
+                config.answerability_probe_dir,
+                config.base_model,
+                torch,
+                self.device,
+            )
         self.last_generation: dict = {}
 
     def prompt(
@@ -218,6 +228,22 @@ class ModelBackend:
         return self._generate(
             self.prompt(question, contexts, self.config.max_generation_prompt_tokens)
         )
+
+    def score_answerability(self, question: str, contexts: list[str]) -> dict | None:
+        """Score retrieved evidence with the frozen base model, never the D2L adapter."""
+        if self.answerability_probe is None:
+            return None
+        self.model.reset()
+        try:
+            return self.answerability_probe.score(
+                self.model.base_model,
+                self.tokenizer,
+                question,
+                contexts,
+                self.torch,
+            )
+        finally:
+            self.model.reset()
 
     def generate_with_adapter(self, question: str, adapter) -> str:
         return self._generate(

@@ -48,6 +48,9 @@ class Config:
     d2l_repo: Path
     d2l_checkpoint: Path
     rag_python: Path
+    answerability_probe_enabled: bool
+    answerability_probe_mode: str
+    answerability_probe_dir: Path
 
 
 def load_config(path: str | Path | None = None) -> Config:
@@ -62,6 +65,10 @@ def load_config(path: str | Path | None = None) -> Config:
         raise ValueError("Generation must be deterministic")
     rag_repo = _path("RAG_REPO_PATH", ROOT.parent / "vietnamese-rag-system")
     d2l_repo = _path("D2L_REPO_PATH", ROOT.parent / "doc-to-lora")
+    probe_cfg = cfg.get("answerability_probe", {})
+    probe_mode = str(probe_cfg.get("mode", "shadow"))
+    if probe_mode not in {"shadow", "hard_gate"}:
+        raise ValueError("answerability_probe.mode must be 'shadow' or 'hard_gate'")
     python_name = "Scripts/python.exe" if os.name == "nt" else "bin/python"
     return Config(
         base_model=cfg["base_model"],
@@ -85,4 +92,10 @@ def load_config(path: str | Path | None = None) -> Config:
         d2l_repo=d2l_repo,
         d2l_checkpoint=_path("D2L_CHECKPOINT", d2l_repo / "trained_d2l/qwen_4b_d2l/checkpoint-20000/pytorch_model.bin"),
         rag_python=_executable_path("RAG_PYTHON", rag_repo / ".venv" / python_name),
+        answerability_probe_enabled=bool(probe_cfg.get("enabled", False)),
+        answerability_probe_mode=probe_mode,
+        answerability_probe_dir=_path(
+            "ANSWERABILITY_PROBE_DIR",
+            ROOT / "artifacts/answerability_probe",
+        ),
     )

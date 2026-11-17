@@ -70,6 +70,28 @@ This writes `outputs/scored_candidates.jsonl` with the six length-normalized ans
 
 The default `tau` was tuned for Gemma candidates and must be recalibrated on validation data for Qwen. Regenerate candidates and scores into new output paths; older cached files refer to Gemma.
 
+## Answerability probe
+
+The exported Qwen3-4B TyDiQA+UDHR linear probe is stored under
+`artifacts/answerability_probe/`. Candidate generation evaluates the retrieved passages and
+question with the frozen base model at hidden-state index 21, then records the probability,
+threshold, binary decision, prompt length, and truncation flag in `answerability_probe`.
+
+The default is deliberately non-mutating:
+
+```yaml
+answerability_probe:
+  enabled: true
+  mode: shadow
+```
+
+Use `shadow` to validate the frozen threshold on retrieved contexts. After validation, change
+the mode to `hard_gate` to make an unanswerable probe decision set `final_source` to
+`answerability_probe` and `final_answer` to `Tài liệu không đề cập.`. TrustMargin still chooses
+between D2L and RAG only for samples that pass the gate. `answerability_probe.threshold` and
+TrustMargin `tau` are separate decision thresholds and must not be combined. Override the
+artifact directory with `ANSWERABILITY_PROBE_DIR` when needed.
+
 ## Run TrustMargin and oracle evaluation
 
 ```bash

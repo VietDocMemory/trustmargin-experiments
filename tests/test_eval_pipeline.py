@@ -77,6 +77,37 @@ class EvalPipelineTests(unittest.TestCase):
             self.assertGreaterEqual(len(report["sweep"]["trials"]), 42)
             self.assertIn("selected_rag", report["sweep"]["best"])
 
+    def test_hard_gate_abstains_before_d2l_rag_selection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "scored.jsonl"
+            sample = row("probe-gate")
+            sample["question_type"] = "unanswerable"
+            sample["gold_answers"] = ["Tài liệu không đề cập."]
+            sample["answerability_probe"] = {
+                "prob_answerable": 0.1,
+                "threshold": 0.45405974088596857,
+                "pred_answerable": False,
+            }
+            source.write_text(json.dumps(sample, ensure_ascii=False) + "\n", encoding="utf-8")
+            config = SimpleNamespace(
+                lambda_bind=0.0,
+                tau=-1.38,
+                answerability_probe_mode="hard_gate",
+            )
+            report = run_eval(source, root / "results.jsonl", root / "report.json", config)
+            result = json.loads((root / "results.jsonl").read_text(encoding="utf-8"))
+            self.assertEqual(result["final_source"], "answerability_probe")
+            self.assertEqual(result["final_answer"], "Tài liệu không đề cập.")
+            self.assertEqual(result["final_override_reason"], "answerability_probe")
+            self.assertEqual(report["selection_counts"], {
+                "d2l": 0,
+                "rag": 0,
+                "answerability_probe": 1,
+            })
+            self.assertEqual(report["metrics"]["tm"]["exact_match"], 1.0)
+            self.assertEqual(report["answerability_probe"]["refusal_correct"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

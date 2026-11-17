@@ -139,6 +139,9 @@ def generate_candidates(
         if backend.device == "cuda" and config.log_cuda_memory:
             backend.torch.cuda.reset_peak_memory_stats()
         contexts = [passage["content"] for passage in sample["passages"]]
+        probe_started = time.perf_counter()
+        answerability_probe = backend.score_answerability(sample["question"], contexts)
+        probe_latency = time.perf_counter() - probe_started
         document_text = (
             "\n\n".join(contexts)
             if document_source == "retrieved"
@@ -166,6 +169,7 @@ def generate_candidates(
             "collection_name": sample["collection_name"],
             "retrieved_contexts": sample["passages"],
             "retrieval_scores": [p["score"] for p in sample["passages"]],
+            "answerability_probe": answerability_probe,
             "d2l_answer": d2l_answer, "rag_answer": rag_answer,
             "raw_d2l_answer": d2l_diagnostics["raw_answer"],
             "raw_rag_answer": rag_diagnostics["raw_answer"],
@@ -177,6 +181,7 @@ def generate_candidates(
             "adapter_cache_hit": d2l.adapter_cache_hit,
             "latency": {
                 "retrieval": sample["retrieval_latency"],
+                "answerability_probe": probe_latency,
                 "adapter_build": d2l.adapter_generation_latency + d2l.adapter_load_latency,
                 "adapter_generation": d2l.adapter_generation_latency,
                 "adapter_load": d2l.adapter_load_latency,
@@ -257,9 +262,10 @@ def run_eval(input_path: str | Path, output_path: str | Path, report_path: str |
     validate_alignment(rows)
     lam = config.lambda_bind if lambda_bind is None else lambda_bind
     threshold = config.tau if tau is None else tau
+    probe_mode = getattr(config, "answerability_probe_mode", "shadow")
     # Oracle analysis is calculated before TrustMargin decisions.
     both_wrong_threshold = getattr(config, "both_wrong_f1_threshold", 0.2)
-    oracle_report = summarize(rows, lam, threshold, both_wrong_threshold)
+    oracle_report = summarize(rows, lam, threshold, both_wrong_threshold, probe_mode)
     if sweep:
         if any(row.get("split") != "validation" for row in rows):
             raise ValueError("Threshold sweep requires every row to have split='validation'")
@@ -279,6 +285,7 @@ def run_eval(input_path: str | Path, output_path: str | Path, report_path: str |
                     candidate_lam,
                     candidate_tau,
                     both_wrong_threshold,
+                    probe_mode,
                 )
                 metrics = report["metrics"]["tm"]
                 trials.append({
@@ -289,6 +296,9 @@ def run_eval(input_path: str | Path, output_path: str | Path, report_path: str |
                     "exact_match": metrics["exact_match"],
                     "selected_rag": report["selection_counts"]["rag"],
                     "selected_d2l": report["selection_counts"]["d2l"],
+                    "selected_abstain": report["selection_counts"].get(
+                        "answerability_probe", 0
+                    ),
                 })
         best = max(
             trials,
@@ -304,13 +314,29 @@ def run_eval(input_path: str | Path, output_path: str | Path, report_path: str |
     for row in rows:
         decision = arbitrate_candidate(row, lam, threshold)
         row.update(decision)
-        row["final_answer"] = row[f'{decision["selected_source"]}_answer']
+        probe = row.get("answerability_probe")
+        probe_abstains = bool(
+            probe_mode == "hard_gate"
+            and probe
+            and not probe.get("pred_answerable", True)
+        )
+        if probe_abstains:
+            from .text import ABSTENTION
+
+            row["final_source"] = "answerability_probe"
+            row["final_answer"] = ABSTENTION
+            row["final_override_reason"] = "answerability_probe"
+        else:
+            row["final_source"] = decision["selected_source"]
+            row["final_answer"] = row[f'{decision["selected_source"]}_answer']
+            row["final_override_reason"] = None
         output_rows.append(row)
-    report = summarize(rows, lam, threshold, both_wrong_threshold)
+    report = summarize(rows, lam, threshold, both_wrong_threshold, probe_mode)
     if sweep:
         report["sweep"] = oracle_report["sweep"]
     report["lambda_bind"] = lam
     report["tau"] = threshold
+    report["answerability_probe_mode"] = probe_mode
     write_jsonl(output_path, output_rows, overwrite=overwrite)
     target = Path(report_path)
     target.parent.mkdir(parents=True, exist_ok=True)

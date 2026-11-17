@@ -48,6 +48,8 @@ def log_experiment(
         "top_k": config.top_k,
         "lambda_bind": report["lambda_bind"],
         "tau": report["tau"],
+        "answerability_probe_enabled": config.answerability_probe_enabled,
+        "answerability_probe_mode": config.answerability_probe_mode,
         "samples": len(rows),
         "dataset": sorted({str(row.get("dataset")) for row in rows}),
         "collection": sorted({str(row.get("collection_name")) for row in rows}),
@@ -63,7 +65,7 @@ def log_experiment(
         for source, metrics in report["metrics"].items():
             scalars.update({f"metrics/{source}/{metric}": value for metric, value in metrics.items()})
         scalars.update({f"oracle/count_{key}": value for key, value in report["oracle_counts"].items()})
-        for key in ("retrieval", "adapter_build", "rag_generation", "d2l_generation", "likelihood_scoring", "total"):
+        for key in ("retrieval", "answerability_probe", "adapter_build", "rag_generation", "d2l_generation", "likelihood_scoring", "total"):
             measurements = [row.get("latency", {}).get(key) for row in rows]
             measurements = [value for value in measurements if isinstance(value, (int, float))]
             if measurements:
@@ -74,19 +76,34 @@ def log_experiment(
             scalars["gpu/max_peak_allocated_mb"] = max(gpu_peaks)
         scalars["selection/rag_count"] = sum(row.get("selected_source") == "rag" for row in rows)
         scalars["selection/d2l_count"] = sum(row.get("selected_source") == "d2l" for row in rows)
+        scalars["selection/probe_abstention_count"] = sum(
+            row.get("final_source") == "answerability_probe" for row in rows
+        )
         scalars["quality/d2l_repetition_loop_count"] = report["candidate_diagnostics"].get("d2l_repetition_loop", 0)
         scalars["quality/d2l_repetition_retry_count"] = report["candidate_diagnostics"].get("d2l_repetition_retry", 0)
         scalars["quality/d2l_repetition_override_count"] = report["candidate_diagnostics"].get("d2l_repetition_override", 0)
         scalars["adapter/cache_hit_count"] = sum(bool(row.get("adapter_cache_hit")) for row in rows)
+        if report.get("answerability_probe"):
+            scalars.update({
+                f"answerability_probe/{key}": value
+                for key, value in report["answerability_probe"].items()
+            })
         if report.get("sweep"):
             best = report["sweep"]["best"]
             scalars.update({f"sweep/best_{key}": value for key, value in best.items()})
         run.log(scalars)
 
-        columns = ["id", "question", "d2l_answer", "rag_answer", "selected_source", "final_answer", "gold_answers", "m_prior", "m_bind", "trust_score", "d2l_repetition_loop", "selection_override_reason"]
+        columns = ["id", "question", "d2l_answer", "rag_answer", "selected_source", "final_source", "final_answer", "final_override_reason", "gold_answers", "m_prior", "m_bind", "trust_score", "probe_probability", "probe_threshold", "probe_answerable", "d2l_repetition_loop", "selection_override_reason"]
         table = wandb.Table(columns=columns)
         for row in rows:
-            table.add_data(*(json.dumps(row[key], ensure_ascii=False) if key == "gold_answers" else row.get(key) for key in columns))
+            probe = row.get("answerability_probe") or {}
+            values = {
+                **row,
+                "probe_probability": probe.get("prob_answerable"),
+                "probe_threshold": probe.get("threshold"),
+                "probe_answerable": probe.get("pred_answerable"),
+            }
+            table.add_data(*(json.dumps(values[key], ensure_ascii=False) if key == "gold_answers" else values.get(key) for key in columns))
         run.log({"decisions": table})
 
         artifact = wandb.Artifact(f"trustmargin-results-{run.id}", type="evaluation")

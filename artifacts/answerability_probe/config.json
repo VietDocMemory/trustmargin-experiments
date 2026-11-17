@@ -1,0 +1,42 @@
+{
+  "protocol": "paper TyDiQA+UDHR; item-disjoint 5-fold UDHR calibration",
+  "model": "Qwen/Qwen3-4B-Instruct-2507",
+  "layer": 21,
+  "hidden_state_index": 21,
+  "layer_semantics": "hidden_states index; 0 is the embedding output",
+  "hidden_size": 2560,
+  "prompt_style": "bare",
+  "pooling": "last",
+  "max_len": 1024,
+  "l2": 0.001,
+  "folds": 5,
+  "calib_fold": 0,
+  "bias_by_fold": [
+    0.06190955638885498,
+    -0.16135746240615845,
+    1.1493734121322632,
+    0.4267653822898865,
+    -0.5552870035171509
+  ],
+  "global_bias": 0.18428077697753906,
+  "threshold_p_answerable": 0.45405974088596857,
+  "threshold": 0.45405974088596857,
+  "decision": "answerable if probability >= threshold",
+  "metrics_oof_udhr": {
+    "rows": 17280,
+    "answerable_total": 13776,
+    "unanswerable_total": 3504,
+    "answerable_correct": 13292,
+    "false_refusal": 484,
+    "refusal_correct": 2516,
+    "missed_refusal": 988,
+    "answerable_accuracy": 0.9648664343786295,
+    "refusal_precision": 0.8386666666666667,
+    "refusal_recall": 0.7180365296803652,
+    "refusal_f1": 0.7736777367773677,
+    "accuracy": 0.9148148148148149,
+    "auroc": 0.9416379414069337
+  },
+  "tydi_rows": 32899,
+  "udhr_rows": 17280
+}

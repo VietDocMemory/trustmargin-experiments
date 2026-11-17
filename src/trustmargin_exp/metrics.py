@@ -55,6 +55,7 @@ def summarize(
     lambda_bind: float,
     tau: float,
     both_wrong_f1_threshold: float = 0.2,
+    answerability_probe_mode: str = "shadow",
 ) -> dict:
     from .trustmargin import arbitrate_candidate
 
@@ -69,7 +70,17 @@ def summarize(
         d_key, r_key = (d["token_f1"], d["exact_match"]), (r["token_f1"], r["exact_match"])
         oracle = r if r_key > d_key else d
         selected = arbitrate_candidate(row, lambda_bind, tau)["selected_source"]
-        tm = r if selected == "rag" else d
+        probe = row.get("answerability_probe")
+        probe_abstains = bool(
+            answerability_probe_mode == "hard_gate"
+            and probe
+            and not probe.get("pred_answerable", True)
+        )
+        tm = (
+            sample_metrics(ABSTENTION, golds, unanswerable)
+            if probe_abstains
+            else (r if selected == "rag" else d)
+        )
         for source, metrics in (("d2l", d), ("rag", r), ("oracle", oracle), ("tm", tm)):
             sums[source].update(metrics)
         counts["rag_better" if r_key > d_key else "d2l_better" if d_key > r_key else "tie"] += 1
@@ -91,9 +102,19 @@ def summarize(
         "both_exact_match_wrong", "unanswerable",
     ):
         counts[key] += 0
-    selection_counts = Counter(
-        arbitrate_candidate(row, lambda_bind, tau)["selected_source"] for row in rows
-    )
+    selection_counts = Counter()
+    for row in rows:
+        probe = row.get("answerability_probe")
+        if (
+            answerability_probe_mode == "hard_gate"
+            and probe
+            and not probe.get("pred_answerable", True)
+        ):
+            selection_counts["answerability_probe"] += 1
+        else:
+            selection_counts[
+                arbitrate_candidate(row, lambda_bind, tau)["selected_source"]
+            ] += 1
     latency_keys = sorted({
         key
         for row in rows
@@ -122,6 +143,49 @@ def summarize(
                 "initial_repetition_loop", "repetition_retry",
             ):
                 diagnostic_summary[f"{source}_{key}"] += int(bool(values.get(key)))
+    probe_rows = [row for row in rows if row.get("answerability_probe")]
+    probe_summary = None
+    if probe_rows:
+        refusal_correct = sum(
+            row.get("question_type") == "unanswerable"
+            and not row["answerability_probe"].get("pred_answerable", True)
+            for row in probe_rows
+        )
+        false_refusal = sum(
+            row.get("question_type") != "unanswerable"
+            and not row["answerability_probe"].get("pred_answerable", True)
+            for row in probe_rows
+        )
+        missed_refusal = sum(
+            row.get("question_type") == "unanswerable"
+            and row["answerability_probe"].get("pred_answerable", True)
+            for row in probe_rows
+        )
+        answerable_correct = sum(
+            row.get("question_type") != "unanswerable"
+            and row["answerability_probe"].get("pred_answerable", True)
+            for row in probe_rows
+        )
+        refusal_precision = refusal_correct / max(refusal_correct + false_refusal, 1)
+        refusal_recall = refusal_correct / max(refusal_correct + missed_refusal, 1)
+        probe_summary = {
+            "count": len(probe_rows),
+            "answerable_correct": answerable_correct,
+            "false_refusal": false_refusal,
+            "refusal_correct": refusal_correct,
+            "missed_refusal": missed_refusal,
+            "refusal_precision": refusal_precision,
+            "refusal_recall": refusal_recall,
+            "refusal_f1": (
+                2 * refusal_precision * refusal_recall
+                / max(refusal_precision + refusal_recall, 1e-12)
+            ),
+            "binary_accuracy": (answerable_correct + refusal_correct) / len(probe_rows),
+            "context_truncated": sum(
+                bool(row["answerability_probe"].get("context_truncated"))
+                for row in probe_rows
+            ),
+        }
     return {
         "n": n,
         "metrics": averages,
@@ -129,9 +193,15 @@ def summarize(
         "selection_counts": {
             "d2l": selection_counts["d2l"],
             "rag": selection_counts["rag"],
+            **(
+                {"answerability_probe": selection_counts["answerability_probe"]}
+                if answerability_probe_mode == "hard_gate"
+                else {}
+            ),
         },
         "mean_latency_seconds": latency,
         "candidate_diagnostics": dict(diagnostic_summary),
+        "answerability_probe": probe_summary,
         "both_wrong_f1_threshold": both_wrong_f1_threshold,
         "oracle_gain_over_best_single_source_f1": gain,
         "warning": "Low candidate complementarity; TrustMargin has little headroom" if gain < 0.01 else None,

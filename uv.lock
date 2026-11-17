@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.12"
 
 [[package]]
@@ -1217,6 +1217,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
+    { name = "numpy" },
     { name = "pypdf" },
     { name = "pyyaml" },
     { name = "rouge-score" },
@@ -1233,6 +1234,7 @@ tracking = [
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", specifier = ">=3.8" },
+    { name = "numpy", specifier = ">=2" },
     { name = "pypdf", specifier = ">=5" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8" },
     { name = "pyyaml", specifier = ">=6" },

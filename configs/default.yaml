@@ -16,6 +16,11 @@ rag:
 trustmargin:
   lambda_bind: 0.0
   tau: -1.38
+answerability_probe:
+  enabled: true
+  # Shadow mode records probe decisions without changing the final answer.
+  # Switch to hard_gate only after validation on retrieved contexts.
+  mode: shadow
 runtime:
   dtype: bfloat16
   device: cuda
